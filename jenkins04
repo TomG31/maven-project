@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+    tools{
+        maven "LocalMaven"
+    }
+
+    stages {
+        stage('Clone Conebase') {
+            steps {
+                echo 'clone githubrepo'
+                git 'https://github.com/TomG31/maven-project.git'
+            }
+        }
+        stage('Compile') {
+            steps {
+                withMaven(maven:'LocalMaven')
+                {
+                    bat "mvn compile"
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                withMaven(maven:'LocalMaven')
+                {
+                    bat "mvn test"
+                }
+            }
+        }
+         stage('Build') {
+            steps {
+                withMaven(maven:'LocalMaven')
+                {
+                    bat "mvn -B -DskipTests clean package"
+                }
+            }
+            
+        }
+        
+        stage('Analyse and send results to Sonar') {
+            steps {
+                withSonarQubeEnv(installationName:'LocalSonar',credentialsId:'token4sonar')
+                {
+                    bat "mvn -B -DskipTests clean package sonar:sonar"
+                }
+            }
+            
+        }
+    }
+}
